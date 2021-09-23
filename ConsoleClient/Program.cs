@@ -36,7 +36,7 @@ namespace ConsoleClient
         {
             while (CycleTemp)
             {
-                var delayTask = Task.Delay(1000);
+                var delayTask = Task.Delay(5000);
                 Messages = await GetAllMessagesAsync(CurrentUser.Username);
                 UnreadMessages = Messages.Where(x => !x.IsRead).ToList();
                 await delayTask;
