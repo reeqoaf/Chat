@@ -13,22 +13,30 @@ namespace ConsoleClient
         static HttpClient HttpClient = new HttpClient();
         const string ConnectionString = "http://localhost:5000/";
         static User CurrentUser { get; set; }
+        static bool CycleTemp { get; set; } = true;
         static List<Message> Messages { get; set; } = new List<Message>();
         static List<Message> UnreadMessages { get; set; } = new List<Message>();
         static void Main(string[] args)
         {
             Start();
-            bool temp = true;
-            Thread messageGetter = new Thread(() => GetMessagesEveryTenSeconds().GetAwaiter().GetResult());
+            Thread messageGetter = new Thread(() =>
+            {
+                try
+                {
+                    GetMessagesEveryTenSeconds().GetAwaiter().GetResult();
+                }
+                catch (Exception e) { }
+            });
             messageGetter.Start();
             Menu();
-            messageGetter.Abort();
+            CycleTemp = false;
+            messageGetter.Interrupt();
         }
         static async Task GetMessagesEveryTenSeconds()
         {
-            while (true)
+            while (CycleTemp)
             {
-                var delayTask = Task.Delay(10000);
+                var delayTask = Task.Delay(1000);
                 Messages = await GetAllMessagesAsync(CurrentUser.Username);
                 UnreadMessages = Messages.Where(x => !x.IsRead).ToList();
                 await delayTask;
@@ -106,12 +114,12 @@ namespace ConsoleClient
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.Write($"{messages[i].Sender.Username}: ");
                 Console.ResetColor();
-                Console.WriteLine($"{messages[i].Theme}/t ({messages[i].SendTime})");
+                Console.WriteLine($"{messages[i].Theme}\t ({messages[i].SendTime})");
                 count++;
                 if ((i + 1) % 5 == 0 || i == messages.Count - 1)
                 {
                     Console.WriteLine("Choose message or action: ");
-                    if(i != messages.Count - 1) Console.WriteLine("8 - Next messages");
+                    if (i != messages.Count - 1) Console.WriteLine("8 - Next messages");
                     Console.WriteLine("9 - Go to menu");
                     bool temp = true;
                     do
@@ -285,10 +293,10 @@ namespace ConsoleClient
             }
             return registered;
         }
-        static async Task<bool> WriteMessage( string receiverUsername, string senderUsername, string text, string theme)
+        static async Task<bool> WriteMessage(string receiverUsername, string senderUsername, string text, string theme)
         {
             bool sent = false;
-            HttpResponseMessage response = await HttpClient.PostAsJsonAsync(ConnectionString + "user/writemessage/", new { ReceiverUsername = receiverUsername, SenderUsername = senderUsername, Text = text, Theme = theme});
+            HttpResponseMessage response = await HttpClient.PostAsJsonAsync(ConnectionString + "user/writemessage/", new { ReceiverUsername = receiverUsername, SenderUsername = senderUsername, Text = text, Theme = theme });
             if (response.IsSuccessStatusCode)
             {
                 sent = await response.Content.ReadAsAsync<bool>();

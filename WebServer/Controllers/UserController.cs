@@ -81,17 +81,6 @@ namespace WebServer.Controllers
             return true;
         }
         [HttpGet("getallmessages")]
-        /*public IEnumerable<Message> GetAllMessages(string username)
-        {
-            if (username == null)
-            {
-                return Context.Messages.ToList();
-            }
-            else
-            {
-                return Find(username).ReceivedMessages.ToList();
-            }
-        }*/
         public IEnumerable<MessageDto> GetAllMessages(string username)
         {
             List<MessageDto> result = new List<MessageDto>();
